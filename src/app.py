@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 import pytz
 
 import rjpl
-
 import pandas as pd
 
 app = FastAPI()
