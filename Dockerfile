@@ -28,4 +28,4 @@ COPY ./app /app
 RUN --mount=type=cache,target=/root/.cache uv sync --frozen
 
 EXPOSE 8080
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8088", "--log-level", "info", "--access-log"]
+CMD ["uvicorn", "app:app", "--reload", "--host", "0.0.0.0", "--port", "8080"]

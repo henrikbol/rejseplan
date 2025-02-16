@@ -28,6 +28,9 @@ table.dataframe td {
     border: 2px solid #ccf;
     background-color: #f4f4ff;
 }
+table.dataframe tr:nth-child(even) td {
+    background-color: #d0d0ff; /* increased contrast for light mode */
+}
 .button {
     background-color: #2275e1; /* Green */
     color: white;
@@ -61,12 +64,16 @@ table.dataframe td {
         color: #e0e0e0;
         border-color: #444;
     }
+    table.dataframe tr:nth-child(even) td {
+        background-color: #424242; /* increased contrast for dark mode */
+    }
     .button {
-        background-color: #444;
-        border: 1px solid #777;
+        background-color: #00aeff;
+        color: white;
+        border: 1px solid #000fe6;
     }
     .button:active {
-        background-color: #555;
+        background-color: #351c3c;
         transform: translateY(1px);
     }
 }

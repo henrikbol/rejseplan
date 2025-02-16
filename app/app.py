@@ -15,9 +15,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 rjpl = RejsePlan()
 
 
-@app.get("/{board_id}")
-def return_board(request: Request, board_id: int = 8600675):
-    df = rjpl.get_departure_board(station_id=board_id, max_journeys=30)  # Lyngby
+@app.get("/")
+def return_board(request: Request, board_id: str = "8600675"):
+    df = rjpl.get_departure_board(station_id=board_id, max_journeys=45)  # Lyngby
 
     dep_board = df.iloc[0, 0]  # Get first station name
     current_time = datetime.now(tz).strftime("%H:%M")
@@ -33,3 +33,8 @@ def return_board(request: Request, board_id: int = 8600675):
             "result": df.to_html(index=False, header=False),
         },
     )
+
+@app.get("/{board_id}")
+def return_board_path(request: Request, board_id: str):
+    # Delegate to the existing return_board
+    return return_board(request, board_id=board_id)
