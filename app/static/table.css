@@ -38,7 +38,35 @@ table.dataframe td {
     font-size: 18px;
     float: left;
     border: 1px solid white;
-  }
-  .button:active {
+}
+.button:active {
     background-color: #6187d7;
     transform: translateY(1px);
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+    table.dataframe {
+        background-color: #1e1e1e;
+    }
+    table.dataframe th:not(:empty) {
+        background-color: #333;
+        color: #e0e0e0;
+    }
+    table.dataframe td {
+        background-color: #2e2e2e;
+        color: #e0e0e0;
+        border-color: #444;
+    }
+    .button {
+        background-color: #444;
+        border: 1px solid #777;
+    }
+    .button:active {
+        background-color: #555;
+        transform: translateY(1px);
+    }
+}
