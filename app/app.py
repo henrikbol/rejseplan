@@ -18,19 +18,20 @@ rjpl = RejsePlan()
 @app.get("/")
 def return_board(request: Request, board_id: str = "8600675"):
     df = rjpl.get_departure_board(station_id=board_id, max_journeys=45)  # Lyngby
-
-    dep_board = df.iloc[0, 0]  # Get first station name
     current_time = datetime.now(tz).strftime("%H:%M")
-    df["time"] = df.apply(lambda x: rjpl.cal_new_time(x["time"], x["rtTime"]), axis=1)
-    df.drop(columns=["stop", "rtTime"], inplace=True)
+    if not df.empty:
+    #    df = df[["name", "direction", "time", "rtTime"]]
+        dep_board = df.iloc[0, 0]  # Get first station name
+        df["time"] = df.apply(lambda x: rjpl.cal_new_time(x["time"], x["rtTime"]), axis=1)
+        df.drop(columns=["stop", "rtTime"], inplace=True)
 
     return templates.TemplateResponse(
         "form.html",
         context={
             "request": request,
-            "board": dep_board,
+            "board": dep_board if 'dep_board' in locals() else "Unknown",
             "time": current_time,
-            "result": df.to_html(index=False, header=False),
+            "result": df.to_html(index=False, header=False) if not df.empty else "No departures found",
         },
     )
 
