@@ -14,6 +14,8 @@ class RejsePlan:
         self.access_id = os.environ.get("RPL_ACCESS_ID")
         self.base_url = "https://www.rejseplanen.dk/api/"
         self.headers = {"Accept": "application/json"}
+        self.session = requests.Session()
+        self.session.headers.update(self.headers)
 
     def get_departure_board(
         self,
@@ -24,7 +26,7 @@ class RejsePlan:
         duration: int = 60,
         max_journeys: int = -1,
         **kwargs,
-    ) -> pd.DataFrame:
+    ) -> tuple[pd.DataFrame, str | None]:
         """
         Fetches the departure board for a given station.
 
@@ -38,12 +40,9 @@ class RejsePlan:
             **kwargs: Additional parameters to include in the request.
 
         Returns:
-            pd.DataFrame: A DataFrame containing the departure information with columns ["name", "direction", "time", "rtTime"].
-
-        Raises:
-            requests.exceptions.HTTPError: If an HTTP error occurs.
-            requests.exceptions.JSONDecodeError: If a JSON decode error occurs.
-            Exception: For any other exceptions that occur.
+            tuple[pd.DataFrame, str | None]: A tuple containing:
+                - DataFrame with departure information (columns: ["name", "direction", "time", "rtTime"])
+                - Error message string if an error occurred, None otherwise
         """
         url = f"{self.base_url}departureBoard"
 
@@ -64,20 +63,39 @@ class RejsePlan:
         params = {k: v for k, v in params.items() if v is not None}
 
         try:
-            response = requests.get(url, params=params, headers=self.headers, timeout=10)
+            response = self.session.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
+
+            # Check if there are any departures
+            if "Departure" not in data or not data["Departure"]:
+                return pd.DataFrame(), None
+
             df = pd.json_normalize(data["Departure"])
             df = df[df["ProductAtStop.catOut"].isin(prods)][
                 ["stop", "name", "direction", "time", "rtTime"]
             ]
-            return df
+            return df, None
+        except requests.exceptions.Timeout:
+            error_msg = "API request timed out. Please try again."
+            logging.error(error_msg)
+            return pd.DataFrame(), error_msg
         except requests.exceptions.HTTPError as http_err:
+            error_msg = f"Could not fetch departures (HTTP {http_err.response.status_code})"
             logging.error(f"HTTP error occurred: {http_err}")
+            return pd.DataFrame(), error_msg
         except requests.exceptions.JSONDecodeError as json_err:
-            logging.error("JSON decode error:", json_err)
+            error_msg = "Invalid response from API"
+            logging.error(f"JSON decode error: {json_err}")
+            return pd.DataFrame(), error_msg
+        except KeyError as key_err:
+            error_msg = "Unexpected API response format"
+            logging.error(f"Key error: {key_err}")
+            return pd.DataFrame(), error_msg
         except Exception as err:
+            error_msg = "An unexpected error occurred"
             logging.error(f"An error occurred: {err}")
+            return pd.DataFrame(), error_msg
 
     @staticmethod
     def cal_time_dif_min(timea: str, timeb: str) -> str:

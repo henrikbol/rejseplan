@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="da">
 
 <head>
     <meta charset="UTF-8">
-    <title>Afgange</title>
+    <title>Afgange - {{ board }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="60">
 
     <link rel="stylesheet" href="static/table.css">
     <link rel="icon" href="static/favicon.ico" sizes="any">
@@ -12,30 +13,54 @@
 </head>
 
 <body>
-    <div>
-        <form action="/8600675">
-            <input type="submit" class="button" value="Lyngby" />
-        </form>
-        <form action="/8600626">
-            <input type="submit" class="button" value="Kbh H" />
-        </form>
-        <form action="/8600646">
-            <input type="submit" class="button" value="Nørreport" />
-        </form>
-        <form action="/8600642">
-            <input type="submit" class="button" value="Nørrebro" />
-        </form>
-        <form action="/8600655">
-            <input type="submit" class="button" value="Hellerup" />
-        </form>
+    <div class="button-container">
+        {% for station in stations %}
+        <a href="/{{ station.id }}" class="button {% if station.id == current_board_id %}active{% endif %}" title="Tryk {{ loop.index }} for {{ station.name }}">
+            <span class="keyboard-hint">{{ loop.index }}</span> {{ station.name }}
+        </a>
+        {% endfor %}
     </div>
-    <br>
-    <p>
-        <br>
-    </p>
+
     <h4><b>{{ board }} ({{ time }})</b></h4>
 
-    {{ result | safe }}</p>
+    {{ result | safe }}
+
+    <script>
+        // Register service worker for offline support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').then(function(registration) {
+                console.log('Service Worker registered:', registration);
+            }).catch(function(error) {
+                console.log('Service Worker registration failed:', error);
+            });
+        }
+
+        // Show loading state when clicking station buttons
+        document.querySelectorAll('.button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Remove active class from all buttons
+                document.querySelectorAll('.button').forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                // Show loading message
+                const resultDiv = document.querySelector('h4').nextElementSibling;
+                if (resultDiv) {
+                    resultDiv.innerHTML = '<div class="info-message"><span class="loading"></span>Henter afgange...</div>';
+                }
+            });
+        });
+
+        // Keyboard shortcuts (1-5 for stations)
+        document.addEventListener('keydown', function(e) {
+            const buttons = document.querySelectorAll('.button');
+            const key = parseInt(e.key);
+
+            if (key >= 1 && key <= buttons.length) {
+                e.preventDefault();
+                buttons[key - 1].click();
+            }
+        });
+    </script>
 
 </body>
 
