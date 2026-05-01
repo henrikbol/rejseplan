@@ -16,6 +16,7 @@ dependencies = [
 dev = [
     "ruff>=0.15.12",
     "ty>=0.0.33",
+    "types-requests>=2.33.0.20260408",
 ]
 
 [tool.ty.environment]
