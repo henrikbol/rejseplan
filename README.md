@@ -4,6 +4,8 @@ A minimal web app showing upcoming train departures from a fixed set of Copenhag
 
 **Stations:** Lyngby · Kbh H · Nørreport · Nørrebro · Hellerup
 
+<img src="pics/IMG_6048.png" width="320" alt="Departure board"> <img src="pics/IMG_6047.png" width="320" alt="Live vehicle position map">
+
 ## Prerequisites
 
 - [just](https://github.com/casey/just) — command runner
