@@ -1,8 +1,8 @@
 # Rejseplan Departure Board
 
-A minimal web app showing upcoming train departures from a fixed set of Copenhagen-area stops. Fetches live data from the Rejseplan public API and auto-refreshes every 60 seconds. Click any departure row to see the vehicle's live position on a map.
+A web app showing upcoming train departures from a fixed set of Copenhagen-area stops. Fetches live data from the Rejseplan public API and auto-refreshes every 60 seconds. Click any departure row to see the vehicle's live position on a map.
 
-**Stations:** Lyngby · Kbh H · Nørreport · Nørrebro · Hellerup
+**Stations:** Lyngby · Kbh H · Nørreport · Nørrebro · Hellerup · Vesterport · Østerport
 
 <img src="pics/IMG_6048.png" width="320" alt="Departure board"> <img src="pics/IMG_6047.png" width="320" alt="Live vehicle position map">
 
