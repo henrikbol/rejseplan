@@ -71,4 +71,5 @@ dev:
 
 # Run locally with uv (no Docker), loads env vars from .env
 run:
-    uv run --env-file .env uvicorn app:app --reload --host 0.0.0.0 --port 8080 --app-dir app
+    #!/usr/bin/env bash
+    cd app && uv run --env-file ../.env uvicorn app:app --reload --host 0.0.0.0 --port 8080
