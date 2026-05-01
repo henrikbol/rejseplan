@@ -91,6 +91,8 @@ h4 {
 .button-container .button:nth-child(3) { animation-delay: 0.15s; }
 .button-container .button:nth-child(4) { animation-delay: 0.2s; }
 .button-container .button:nth-child(5) { animation-delay: 0.25s; }
+.button-container .button:nth-child(6) { animation-delay: 0.3s; }
+.button-container .button:nth-child(7) { animation-delay: 0.35s; }
 
 .button-container form {
     margin: 0;
@@ -304,4 +306,120 @@ table.dataframe tr.very-delayed td {
         --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
     }
 
+}
+
+@media (max-width: 640px) {
+    /* ── Bottom navigation bar — horizontal scroll ── */
+    .button-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: 0;
+        padding: 0.5em 0.5em env(safe-area-inset-bottom, 0.5em);
+        gap: 0.4em;
+        background: var(--color-bg);
+        border-top: 1px solid var(--color-table-border);
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        animation: none;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .button-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .button-container .button {
+        flex: 0 0 auto;
+        min-height: 48px;
+        font-size: 0.85rem;
+        padding: 0.5em 1em;
+        white-space: nowrap;
+        animation: none;
+        opacity: 1;
+    }
+
+    /* ── Sticky station/time header ── */
+    h4 {
+        position: sticky;
+        top: 0;
+        background: var(--color-bg);
+        padding: 0.5em 0;
+        margin-bottom: 0.75em;
+        border-bottom: 1px solid var(--color-table-border);
+        font-size: 1.1rem;
+        z-index: 10;
+        animation: none;
+    }
+
+    /* ── Body: full-bleed with bottom clearance for nav bar ── */
+    body {
+        margin: 0.75em 0.75em 0;
+        padding-bottom: 90px;
+    }
+
+    /* ── Larger row touch targets ── */
+    table.dataframe td {
+        padding: 1em 0.75em;
+    }
+
+    /* ── Full-screen map modal on mobile ── */
+    #map-container {
+        width: 100vw !important;
+        height: 100dvh !important;
+        border-radius: 0 !important;
+    }
+
+    /* Header bar: line name left, close button right */
+    #map-title {
+        top: 0;
+        left: 0;
+        right: 0;
+        border-radius: 0;
+        padding: 14px 60px 14px 16px;
+        font-size: 1rem;
+        background: rgba(10, 15, 30, 0.88);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* Larger close button, aligned with header */
+    #map-close {
+        top: 6px;
+        right: 8px;
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+        line-height: 44px;
+        background: rgba(10, 15, 30, 0.6);
+    }
+
+    /* Hide zoom controls — pinch-to-zoom is used on mobile */
+    #map .leaflet-control-zoom {
+        display: none;
+    }
+
+    /* Shrink attribution to stay compliant but unobtrusive */
+    #map .leaflet-control-attribution {
+        font-size: 9px;
+        opacity: 0.5;
+        max-width: 60%;
+    }
+
+    /* Active station: subtle underline instead of dark tint + scale */
+    .button-container .button.active {
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+        box-shadow: inset 0 -3px 0 rgba(255, 255, 255, 0.8);
+        transform: none;
+        font-weight: 700;
+    }
+
+    /* Toast sits above the bottom nav */
+    #map-toast {
+        bottom: 90px;
+    }
 }
