@@ -73,7 +73,7 @@ class RejsePlan:
 
             df = pd.json_normalize(data["Departure"])
             df = df[df["ProductAtStop.catOut"].isin(prods)][
-                ["stop", "name", "direction", "time", "rtTime"]
+                ["stop", "name", "direction", "time", "rtTime", "JourneyDetailRef.ref"]
             ]
             return df, None
         except requests.exceptions.Timeout:
@@ -81,7 +81,9 @@ class RejsePlan:
             logging.error(error_msg)
             return pd.DataFrame(), error_msg
         except requests.exceptions.HTTPError as http_err:
-            error_msg = f"Could not fetch departures (HTTP {http_err.response.status_code})"
+            error_msg = (
+                f"Could not fetch departures (HTTP {http_err.response.status_code})"
+            )
             logging.error(f"HTTP error occurred: {http_err}")
             return pd.DataFrame(), error_msg
         except requests.exceptions.JSONDecodeError as json_err:
@@ -97,13 +99,29 @@ class RejsePlan:
             logging.error(f"An error occurred: {err}")
             return pd.DataFrame(), error_msg
 
+    def get_journey_position(self, journey_ref: str) -> tuple[float, float] | None:
+        url = f"{self.base_url}journeyDetail"
+        params = {"accessId": self.access_id, "id": journey_ref}
+        try:
+            response = self.session.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            pos = data.get("lastPos")
+            if pos and "lat" in pos and "lon" in pos:
+                return float(pos["lat"]), float(pos["lon"])
+            return None
+        except Exception as err:
+            logging.error(f"Journey position error: {err}")
+            return None
+
     @staticmethod
     def cal_time_dif_min(timea: str, timeb: str) -> str:
         return str(
             abs(
                 int(
                     (
-                        datetime.strptime(timea, "%H:%M:%S") - datetime.strptime(timeb, "%H:%M:%S")
+                        datetime.strptime(timea, "%H:%M:%S")
+                        - datetime.strptime(timeb, "%H:%M:%S")
                     ).total_seconds()
                     / 60
                 )

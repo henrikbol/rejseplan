@@ -1,7 +1,9 @@
+import html as html_module
 from datetime import datetime
 
 import pytz
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from services.rejseplan import RejsePlan
@@ -29,7 +31,9 @@ def validate_board_id(board_id: str) -> None:
     if not board_id.isdigit():
         raise HTTPException(status_code=400, detail="Invalid board_id: must be numeric")
     if len(board_id) != 7:
-        raise HTTPException(status_code=400, detail="Invalid board_id: must be 7 digits")
+        raise HTTPException(
+            status_code=400, detail="Invalid board_id: must be 7 digits"
+        )
 
 
 def get_delay_class(time: str, rtTime: str | None) -> str:
@@ -37,8 +41,6 @@ def get_delay_class(time: str, rtTime: str | None) -> str:
     if not isinstance(rtTime, str):
         return "on-time"
 
-    # Calculate delay in minutes
-    from datetime import datetime
     try:
         time_obj = datetime.strptime(time, "%H:%M:%S")
         rtTime_obj = datetime.strptime(rtTime, "%H:%M:%S")
@@ -52,6 +54,15 @@ def get_delay_class(time: str, rtTime: str | None) -> str:
             return "very-delayed"
     except ValueError:
         return "on-time"
+
+
+@app.get("/api/position")
+def get_position(journey_ref: str = Query(...)):
+    pos = rjpl.get_journey_position(journey_ref)
+    if pos is None:
+        raise HTTPException(status_code=404, detail="Position not available")
+    lat, lon = pos
+    return JSONResponse({"lat": lat, "lon": lon})
 
 
 @app.get("/")
@@ -69,19 +80,37 @@ def return_board(request: Request, board_id: str = "8600675"):
         result_html = '<div class="info-message">Ingen afgange fundet</div>'
     else:
         dep_board = df.iloc[0, 0]  # Get first station name
+        # Stash journey refs before dropping them, and line names
+        journey_refs = df["JourneyDetailRef.ref"].tolist()
+        line_names = df["name"].tolist()
         # Calculate delay status before modifying time column
-        df["delay_class"] = df.apply(lambda x: get_delay_class(x["time"], x["rtTime"]), axis=1)
-        df["time"] = df.apply(lambda x: rjpl.cal_new_time(x["time"], x["rtTime"]), axis=1)
-        df = df.drop(columns=["stop", "rtTime"])
+        df["delay_class"] = df.apply(
+            lambda x: get_delay_class(x["time"], x["rtTime"]), axis=1
+        )
+        df["time"] = df.apply(
+            lambda x: rjpl.cal_new_time(x["time"], x["rtTime"]), axis=1
+        )
+        df = df.drop(columns=["stop", "rtTime", "JourneyDetailRef.ref"])
         # Rename columns to Danish labels
         df = df.rename(columns={"name": "Linje", "direction": "Retning", "time": "Tid"})
 
-        # Convert to HTML with custom row classes
-        result_html = df.to_html(index=False, header=True, escape=False, classes="dataframe")
-        # Add delay classes to rows (simple find/replace approach)
-        for idx, delay_class in enumerate(df["delay_class"]):
-            if delay_class:
-                result_html = result_html.replace("<tr>", f'<tr class="{delay_class}">', 1)
+        # Convert to HTML with custom row classes and journey ref data attributes
+        result_html = df.to_html(
+            index=False, header=True, escape=False, classes="dataframe"
+        )
+        # Split at </thead> to avoid replacing the header row
+        thead_part, tbody_part = result_html.split("</thead>", 1)
+        for journey_ref, line_name, delay_class in zip(
+            journey_refs, line_names, df["delay_class"]
+        ):
+            safe_ref = html_module.escape(journey_ref, quote=True)
+            safe_name = html_module.escape(line_name, quote=True)
+            tbody_part = tbody_part.replace(
+                "<tr>",
+                f'<tr class="{delay_class}" data-journey-ref="{safe_ref}" data-line-name="{safe_name}" style="cursor:pointer">',
+                1,
+            )
+        result_html = thead_part + "</thead>" + tbody_part
 
         # Remove delay_class column from display
         result_html = result_html.replace("<th>delay_class</th>", "")
