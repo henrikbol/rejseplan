@@ -13,11 +13,13 @@ tz = pytz.timezone("Europe/Copenhagen")
 
 # Station configuration
 STATIONS = [
-    {"id": "8600675", "name": "Lyngby"},
-    {"id": "8600626", "name": "Kbh H"},
-    {"id": "8600646", "name": "Nørreport"},
-    {"id": "8600642", "name": "Nørrebro"},
-    {"id": "8600655", "name": "Hellerup"},
+    {"id": "8600675", "name": "Lyngby",     "lat": 55.7700, "lon": 12.5048},
+    {"id": "8600626", "name": "Kbh H",      "lat": 55.6726, "lon": 12.5651},
+    {"id": "8600646", "name": "Nørreport",  "lat": 55.6833, "lon": 12.5700},
+    {"id": "8600642", "name": "Nørrebro",   "lat": 55.6942, "lon": 12.5528},
+    {"id": "8600655", "name": "Hellerup",   "lat": 55.7253, "lon": 12.5769},
+    {"id": "8600645", "name": "Vesterport", "lat": 55.6753, "lon": 12.5617},
+    {"id": "8600650", "name": "Østerport",  "lat": 55.6892, "lon": 12.5936},
 ]
 
 app = FastAPI()
@@ -118,6 +120,7 @@ def return_board(request: Request, board_id: str = "8600675"):
         for delay_class in ["on-time", "delayed", "very-delayed"]:
             result_html = result_html.replace(f"<td>{delay_class}</td>", "")
 
+    current_station = next((s for s in STATIONS if s["id"] == board_id), None)
     return templates.TemplateResponse(
         "form.html",
         context={
@@ -128,5 +131,7 @@ def return_board(request: Request, board_id: str = "8600675"):
             "stations": STATIONS,
             "current_board_id": board_id,
             "stadia_api_key": os.environ.get("STADIA_API_KEY", ""),
+            "station_lat": current_station["lat"] if current_station else None,
+            "station_lon": current_station["lon"] if current_station else None,
         },
     )

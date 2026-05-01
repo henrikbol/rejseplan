@@ -86,8 +86,8 @@
 <body>
     <div class="button-container">
         {% for station in stations %}
-        <a href="/{{ station.id }}" class="button {% if station.id == current_board_id %}active{% endif %}" title="Tryk {{ loop.index }} for {{ station.name }}">
-            <span class="keyboard-hint">{{ loop.index }}</span> {{ station.name }}
+        <a href="/{{ station.id }}" class="button {% if station.id == current_board_id %}active{% endif %}">
+            {{ station.name }}
         </a>
         {% endfor %}
     </div>
@@ -142,6 +142,12 @@
         // Live position map
         let leafletMap = null;
         let positionMarker = null;
+        let stationMarker = null;
+        const stationIcon = L.icon({
+            iconUrl: '/static/favicon.ico',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+        });
         const modal = document.getElementById('map-modal');
         const mapTitle = document.getElementById('map-title');
         const toast = document.getElementById('map-toast');
@@ -162,6 +168,12 @@
                     maxZoom: 20,
                 }).addTo(leafletMap);
                 positionMarker = L.marker([lat, lon]).addTo(leafletMap);
+                {% if station_lat and station_lon %}
+                stationMarker = L.marker([{{ station_lat }}, {{ station_lon }}], {
+                    icon: stationIcon,
+                    title: '{{ board }}'
+                }).addTo(leafletMap);
+                {% endif %}
             } else {
                 leafletMap.setView([lat, lon], 14);
                 positionMarker.setLatLng([lat, lon]);
