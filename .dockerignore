@@ -78,3 +78,5 @@ compose.yaml
 *_test.py
 test_*/
 tests/
+
+.env 
