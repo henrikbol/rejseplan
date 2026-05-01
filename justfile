@@ -24,6 +24,19 @@ deploy:
     APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | awk '/{{app}}/ {print $1}')
     sed 's|tag: latest|tag: {{tag}}|' .do/app.yaml | doctl apps update "$APP_ID" --spec /dev/stdin
 
+# Format, lint, and type-check
+fmt:
+    uv run ruff format .
+
+lint:
+    uv run ruff check --fix .
+
+check:
+    uv run ty check app/app.py app/services/
+
+# Run all code quality checks
+qa: fmt lint check
+
 # Run locally with Docker Compose
 dev:
     docker compose up --build app

@@ -15,4 +15,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff>=0.15.12",
+    "ty>=0.0.33",
 ]
+
+[tool.ty.environment]
+extra-paths = ["app"]
