@@ -1,28 +1,56 @@
 image := "registry.digitalocean.com/uggiuggi/tog"
-app   := "rejseplan-app"
+app   := "tog"
 tag   := `git rev-parse --short HEAD`
 
 # Build, push, and deploy in one step
-all: build push deploy
+all: login build deploy
 
-# Build the image for linux/amd64, tagged with git SHA and latest
-build:
-    docker buildx build --platform linux/amd64 --tag tog .
-    docker tag tog {{image}}:{{tag}}
-    docker tag tog {{image}}:latest
-
-# Push both tags to DigitalOcean Container Registry
-push:
+# Login to DigitalOcean Container Registry
+login:
     doctl registry login
-    docker push {{image}}:{{tag}}
-    docker push {{image}}:latest
 
-# Update the app spec with the new image tag — triggers a real redeployment
+# Build linux/amd64 image and push directly to registry
+build:
+    docker buildx build --platform linux/amd64 \
+        --provenance=false \
+        --tag {{image}}:{{tag}} \
+        --tag {{image}}:latest \
+        --push .
+
+# Trigger a new deployment — pulls the latest image without touching the spec or secrets
 deploy:
     #!/usr/bin/env bash
     set -euo pipefail
-    APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | awk '/{{app}}/ {print $1}')
-    sed 's|tag: latest|tag: {{tag}}|' .do/app.yaml | doctl apps update "$APP_ID" --spec /dev/stdin
+    APP_ID=$(doctl apps list --no-header --format ID,Spec.Name | awk '$2 == "{{app}}" {print $1}')
+    if [[ -z "$APP_ID" ]]; then
+        echo "Could not find app '{{app}}'. Available apps:"
+        doctl apps list --format ID,Spec.Name
+        exit 1
+    fi
+    doctl apps create-deployment "$APP_ID"
+
+# Push secrets from .env to the DO app spec
+set-env:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    set -a; source .env; set +a
+    APP_ID=$(doctl apps list --no-header --format ID,Spec.Name | awk '$2 == "{{app}}" {print $1}')
+    if [[ -z "$APP_ID" ]]; then
+        echo "Could not find app '{{app}}'."
+        exit 1
+    fi
+    awk -v RPL="$RPL_ACCESS_ID" -v STADIA="$STADIA_API_KEY" '
+        /key: RPL_ACCESS_ID/  { print; print "    value: " RPL;    next }
+        /key: STADIA_API_KEY/ { print; print "    value: " STADIA; next }
+        { print }
+    ' .do/app.yaml | doctl apps update "$APP_ID" --spec /dev/stdin
+    echo "Secrets synced to DO."
+
+# Show status of the latest deployment
+status:
+    #!/usr/bin/env bash
+    APP_ID=$(doctl apps list --no-header --format ID,Spec.Name | awk '$2 == "{{app}}" {print $1}')
+    doctl apps list-deployments "$APP_ID" --no-header --format ID,Phase,Progress,CreatedAt | head -5
 
 # Format, lint, and type-check
 fmt:
