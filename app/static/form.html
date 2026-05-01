@@ -117,15 +117,30 @@
             });
         }
 
-        // Show loading state when clicking station buttons
+        // Switch active station immediately, then navigate after repaint
         document.querySelectorAll('.button').forEach(button => {
             button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.href;
+
+                // Update active button instantly
                 document.querySelectorAll('.button').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                const resultDiv = document.querySelector('h4').nextElementSibling;
+
+                // Update header with new station name immediately
+                const heading = document.querySelector('h4');
+                if (heading) heading.firstChild.textContent = this.textContent.trim() + ' ';
+
+                // Show loading spinner in table area
+                const resultDiv = heading ? heading.nextElementSibling : null;
                 if (resultDiv) {
                     resultDiv.innerHTML = '<div class="info-message"><span class="loading"></span>Henter afgange...</div>';
                 }
+
+                // Wait for two animation frames so the browser repaints before navigating
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    window.location.href = href;
+                }));
             });
         });
 
