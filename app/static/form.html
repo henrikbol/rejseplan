@@ -8,8 +8,77 @@
     <meta http-equiv="refresh" content="60">
 
     <link rel="stylesheet" href="static/table.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="icon" href="static/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="static/apple-touch-icon.png">
+
+    <style>
+        #map-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #map-modal.open {
+            display: flex;
+        }
+        #map-container {
+            position: relative;
+            width: min(90vw, 640px);
+            height: min(70vh, 480px);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        #map-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 1001;
+            background: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 18px;
+            cursor: pointer;
+            line-height: 32px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        #map-title {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 1001;
+            background: rgba(255,255,255,0.92);
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        #map-toast {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            z-index: 2000;
+            font-size: 14px;
+        }
+    </style>
 </head>
 
 <body>
@@ -25,6 +94,17 @@
 
     {{ result | safe }}
 
+    <div id="map-modal">
+        <div id="map-container">
+            <div id="map-title"></div>
+            <button id="map-close">&#x2715;</button>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <div id="map-toast">Position ikke tilgængelig</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Register service worker for offline support
         if ('serviceWorker' in navigator) {
@@ -38,11 +118,8 @@
         // Show loading state when clicking station buttons
         document.querySelectorAll('.button').forEach(button => {
             button.addEventListener('click', function(e) {
-                // Remove active class from all buttons
                 document.querySelectorAll('.button').forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
                 this.classList.add('active');
-                // Show loading message
                 const resultDiv = document.querySelector('h4').nextElementSibling;
                 if (resultDiv) {
                     resultDiv.innerHTML = '<div class="info-message"><span class="loading"></span>Henter afgange...</div>';
@@ -54,11 +131,64 @@
         document.addEventListener('keydown', function(e) {
             const buttons = document.querySelectorAll('.button');
             const key = parseInt(e.key);
-
             if (key >= 1 && key <= buttons.length) {
                 e.preventDefault();
                 buttons[key - 1].click();
             }
+        });
+
+        // Live position map
+        let leafletMap = null;
+        let positionMarker = null;
+        const modal = document.getElementById('map-modal');
+        const mapTitle = document.getElementById('map-title');
+        const toast = document.getElementById('map-toast');
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function openMap(lat, lon, lineName) {
+            modal.classList.add('open');
+            mapTitle.textContent = lineName;
+            if (!leafletMap) {
+                leafletMap = L.map('map').setView([lat, lon], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                    maxZoom: 19,
+                }).addTo(leafletMap);
+                positionMarker = L.marker([lat, lon]).addTo(leafletMap);
+            } else {
+                leafletMap.setView([lat, lon], 14);
+                positionMarker.setLatLng([lat, lon]);
+                leafletMap.invalidateSize();
+            }
+        }
+
+        function closeMap() {
+            modal.classList.remove('open');
+        }
+
+        document.getElementById('map-close').addEventListener('click', closeMap);
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeMap();
+        });
+
+        document.querySelectorAll('.dataframe tbody tr').forEach(row => {
+            row.addEventListener('click', function() {
+                const journeyRef = this.dataset.journeyRef;
+                const lineName = this.dataset.lineName || 'Køretøj';
+                if (!journeyRef) return;
+                fetch('/api/position?journey_ref=' + encodeURIComponent(journeyRef))
+                    .then(r => {
+                        if (!r.ok) throw new Error('not found');
+                        return r.json();
+                    })
+                    .then(data => openMap(data.lat, data.lon, lineName))
+                    .catch(() => showToast('Position ikke tilgængelig'));
+            });
         });
     </script>
 
