@@ -1,4 +1,5 @@
 import html as html_module
+import os
 from datetime import datetime
 
 import pytz
@@ -126,5 +127,6 @@ def return_board(request: Request, board_id: str = "8600675"):
             "result": result_html,
             "stations": STATIONS,
             "current_board_id": board_id,
+            "stadia_api_key": os.environ.get("STADIA_API_KEY", ""),
         },
     )

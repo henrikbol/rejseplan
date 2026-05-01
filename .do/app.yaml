@@ -14,4 +14,7 @@ services:
   - key: RPL_ACCESS_ID
     scope: RUN_TIME
     type: SECRET
+  - key: STADIA_API_KEY
+    scope: RUN_TIME
+    type: SECRET
   run_command: uvicorn app:app --host 0.0.0.0 --port 8080
