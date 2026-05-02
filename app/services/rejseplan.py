@@ -75,6 +75,11 @@ class RejsePlan:
             df = df[df["ProductAtStop.catOut"].isin(prods)][
                 ["stop", "name", "direction", "time", "rtTime", "JourneyDetailRef.ref"]
             ]
+            
+            # Sort by transportation mode (S-Tog, Re, IC) and then by time
+            df["sort_order"] = df["ProductAtStop.catOut"].map({prod: i for i, prod in enumerate(prods)})
+            df = df.sort_values(["sort_order", "time"]).drop(columns=["sort_order", "ProductAtStop.catOut"])
+
             return df, None
         except requests.exceptions.Timeout:
             error_msg = "API request timed out. Please try again."
