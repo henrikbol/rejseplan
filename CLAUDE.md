@@ -1,3 +1,26 @@
+# Project conventions
+
+## Stack
+- Python 3.12, uv for dependencies, ruff for lint+format, mypy --strict, pytest
+- Never use pip directly. `uv add <pkg>`, `uv run <cmd>`.
+- Source under `src/<package>/`, tests under `tests/` mirroring the source tree.
+
+## Style
+- Google-style docstrings on all public APIs.
+- Type hints required; prefer Protocol over ABC for interfaces.
+- No `Any` without a comment justifying it.
+- F-strings, pathlib, no `os.path`.
+
+## Testing
+- Pytest only. No unittest.TestCase.
+- One assert per concept; use parametrize for tables.
+- Use `tmp_path` and `monkeypatch`, not custom fixtures, when possible.
+
+## Don't
+- Don't add Co-Authored-By to commits.
+- Don't write README.md updates unless asked.
+- Don't add inline comments restating what the code does.
+
 # Rejseplan — Codebase Guide
 
 ## What this is

@@ -10,6 +10,14 @@ tz = pytz.timezone("Europe/Copenhagen")
 
 
 class RejsePlan:
+    """HTTP client for the Rejseplan public API (API 2.0).
+
+    Attributes:
+        access_id: API key read from the ``RPL_ACCESS_ID`` environment variable.
+        base_url: Root URL for all API endpoints.
+        session: Shared ``requests.Session`` with Accept: application/json header.
+    """
+
     def __init__(self):
         self.access_id = os.environ.get("RPL_ACCESS_ID")
         self.base_url = "https://www.rejseplanen.dk/api/"
@@ -27,22 +35,24 @@ class RejsePlan:
         max_journeys: int = -1,
         **kwargs,
     ) -> tuple[pd.DataFrame, str | None]:
-        """
-        Fetches the departure board for a given station.
+        """Fetch upcoming departures from a station, filtered to S-Tog, Re, and IC trains.
+
+        Results are sorted by transport mode (S-Tog → Re → IC) then by scheduled time.
 
         Args:
-            station_id (str): The ID of the station. Defaults to an empty string.
-            date (str): The date for which to fetch the departure board. Defaults to an empty string.
-            time (str): The time for which to fetch the departure board. Defaults to an empty string.
-            lang (str): The language for the response. Defaults to "da".
-            duration (int): The duration in minutes for which to fetch departures. Defaults to 60.
-            max_journeys (int): The maximum number of journeys to fetch. Defaults to -1.
-            **kwargs: Additional parameters to include in the request.
+            station_id: Rejseplan stop ID (e.g. ``"8600675"`` for Lyngby).
+            date: Departure date in ``DD.MM.YY`` format; defaults to today when empty.
+            time: Departure time in ``HH:MM`` format; defaults to now when empty.
+            lang: Response language code. Defaults to ``"da"``.
+            duration: Look-ahead window in minutes. Defaults to ``60``.
+            max_journeys: Maximum number of departures to return; ``-1`` means no limit.
+            **kwargs: Extra query parameters forwarded verbatim to the API.
 
         Returns:
-            tuple[pd.DataFrame, str | None]: A tuple containing:
-                - DataFrame with departure information (columns: ["name", "direction", "time", "rtTime"])
-                - Error message string if an error occurred, None otherwise
+            A ``(DataFrame, error)`` pair. On success, ``error`` is ``None`` and the
+            DataFrame has columns ``stop``, ``name``, ``direction``, ``time``,
+            ``rtTime``, and ``JourneyDetailRef.ref``. On failure, the DataFrame is
+            empty and ``error`` contains a human-readable message.
         """
         url = f"{self.base_url}departureBoard"
 
@@ -105,6 +115,16 @@ class RejsePlan:
             return pd.DataFrame(), error_msg
 
     def get_journey_position(self, journey_ref: str) -> tuple[float, float] | None:
+        """Return the last known GPS position of a vehicle journey.
+
+        Args:
+            journey_ref: Opaque journey reference from a ``JourneyDetailRef.ref``
+                field in a departure-board response.
+
+        Returns:
+            ``(lat, lon)`` as floats, or ``None`` if the position is unavailable
+            or the API call fails.
+        """
         url = f"{self.base_url}journeyDetail"
         params = {"accessId": self.access_id, "id": journey_ref}
         try:
@@ -121,6 +141,15 @@ class RejsePlan:
 
     @staticmethod
     def cal_time_dif_min(timea: str, timeb: str) -> str:
+        """Compute the absolute difference between two ``HH:MM:SS`` times in whole minutes.
+
+        Args:
+            timea: First time string in ``HH:MM:SS`` format.
+            timeb: Second time string in ``HH:MM:SS`` format.
+
+        Returns:
+            Absolute difference in minutes as a string (e.g. ``"5"``).
+        """
         return str(
             abs(
                 int(
@@ -135,6 +164,15 @@ class RejsePlan:
 
     @staticmethod
     def cal_new_time(time: str, rtTime: str | None) -> str:
+        """Format a departure time, appending a delay suffix when the train is late.
+
+        Args:
+            time: Scheduled departure in ``HH:MM:SS`` format.
+            rtTime: Real-time departure in ``HH:MM:SS`` format, or ``None`` if on time.
+
+        Returns:
+            ``"HH:MM"`` when on time, or ``"HH:MM (+N)"`` when delayed by N minutes.
+        """
         if isinstance(rtTime, str):
             return f"{time[:5]} (+{RejsePlan.cal_time_dif_min(time, rtTime)})"
         else:
