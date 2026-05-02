@@ -45,3 +45,28 @@ just deploy   # Trigger redeployment on App Platform
 ```
 
 The app is configured in `.do/app.yaml`. Set `RPL_ACCESS_ID` and `STADIA_API_KEY` as secrets in the DigitalOcean App Platform dashboard.
+
+## Rejseplan API
+
+**Docs:** https://labs.rejseplanen.dk/hc/en-us/articles/21554723926557-Om-API-2-0  
+**Base URL:** `https://www.rejseplanen.dk/api/`  
+**Auth:** `accessId` query parameter on every request
+
+### Getting an API key
+
+1. Request access via the [Labs contact form](https://labs.rejseplanen.dk/hc/requests/new?ticket_form_id=17536468593565)
+2. Once approved, Rejseplanen creates a user account with your email address
+3. Log in to [labs.rejseplanen.dk](https://labs.rejseplanen.dk) to find your `accessId`
+
+**Rate limits:**
+- Non-commercial: 50,000 calls/month free (>50,000 is considered commercial)
+- Commercial: 100,000 calls/day for €5,000/year · 200,000 calls/day for €8,500/year
+
+### Endpoints used by this app
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /departureBoard` | Next departures from a stop (`id`, `accessId`, `maxJourneys`) |
+| `GET /journeyDetail` | Full stop list + real-time data for a single vehicle journey |
+| `GET /journeypos` | Real-time GPS position for a vehicle (used for live map marker) |
+| `GET /location.details` | Lat/lon lookup for a stop ID (used in `scripts/get_station_coords.py`) |
