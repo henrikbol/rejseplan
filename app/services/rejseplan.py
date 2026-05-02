@@ -83,10 +83,8 @@ class RejsePlan:
 
             df = pd.json_normalize(data["Departure"])
             df = df[df["ProductAtStop.catOut"].isin(prods)][
-                ["stop", "name", "direction", "time", "rtTime", "JourneyDetailRef.ref"]
+                ["stop", "name", "direction", "time", "rtTime", "JourneyDetailRef.ref", "ProductAtStop.catOut"]
             ]
-            
-            # Sort by transportation mode (S-Tog, Re, IC) and then by time
             df["sort_order"] = df["ProductAtStop.catOut"].map({prod: i for i, prod in enumerate(prods)})
             df = df.sort_values(["sort_order", "time"]).drop(columns=["sort_order", "ProductAtStop.catOut"])
 

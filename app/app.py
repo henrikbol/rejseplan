@@ -14,12 +14,12 @@ tz = pytz.timezone("Europe/Copenhagen")
 # Station configuration
 STATIONS = [
     {"id": "8600675", "name": "Lyngby", "lat": 55.768088, "lon": 12.503105},
-    {"id": "8600626", "name": "Kbh H", "lat": 55.673063, "lon": 12.565562},
     {"id": "8600646", "name": "Nørreport", "lat": 55.683455, "lon": 12.571801},
-    {"id": "8600642", "name": "Nørrebro", "lat": 55.700849, "lon": 12.537804},
-    {"id": "8600655", "name": "Hellerup", "lat": 55.731026, "lon": 12.567657},
     {"id": "8600645", "name": "Vesterport", "lat": 55.676012, "lon": 12.562083},
     {"id": "8600650", "name": "Østerport", "lat": 55.692498, "lon": 12.587784},
+    {"id": "8600642", "name": "Nørrebro", "lat": 55.700849, "lon": 12.537804},
+    {"id": "8600626", "name": "Kbh H", "lat": 55.673063, "lon": 12.565562},
+    {"id": "8600655", "name": "Hellerup", "lat": 55.731026, "lon": 12.567657},
 ]
 
 app = FastAPI()
