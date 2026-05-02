@@ -40,10 +40,10 @@
             height: 100%;
         }
         #map-close {
-            position: absolute;
-            top: calc(-22px - env(safe-area-inset-top));
-            right: 0;
-            z-index: 1001;
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 12px);
+            right: 16px;
+            z-index: 1002;
             background: rgba(30,30,40,0.85);
             color: #e0e0e0;
             border: none;
