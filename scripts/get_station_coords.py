@@ -38,10 +38,14 @@ session = requests.Session()
 session.headers.update({"Accept": "application/json"})
 
 for station in STATIONS:
-    resp = session.get(BASE_URL, params={
-        "accessId": ACCESS_ID,
-        "id": station["id"],
-    }, timeout=15)
+    resp = session.get(
+        BASE_URL,
+        params={
+            "accessId": ACCESS_ID,
+            "id": station["id"],
+        },
+        timeout=15,
+    )
     resp.raise_for_status()
 
     stops = resp.json().get("stopLocationOrCoordLocation", [])
@@ -50,6 +54,8 @@ for station in STATIONS:
     if stop:
         lat = stop.get("lat")
         lon = stop.get("lon")
-        print(f'{{"id": "{station["id"]}", "name": "{station["name"]}", "lat": {lat}, "lon": {lon}}},')
+        print(
+            f'{{"id": "{station["id"]}", "name": "{station["name"]}", "lat": {lat}, "lon": {lon}}},'
+        )
     else:
-        print(f'# {station["name"]} ({station["id"]}): no result')
+        print(f"# {station['name']} ({station['id']}): no result")
