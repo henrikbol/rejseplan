@@ -30,7 +30,14 @@ rjpl = RejsePlan()
 
 
 def validate_board_id(board_id: str) -> None:
-    """Validate board_id is a valid station ID format."""
+    """Validate that a board ID is a 7-digit numeric station identifier.
+
+    Args:
+        board_id: Station identifier string to validate.
+
+    Raises:
+        HTTPException: 400 if ``board_id`` is non-numeric or not exactly 7 digits.
+    """
     if not board_id.isdigit():
         raise HTTPException(status_code=400, detail="Invalid board_id: must be numeric")
     if len(board_id) != 7:
@@ -40,7 +47,16 @@ def validate_board_id(board_id: str) -> None:
 
 
 def get_delay_class(time: str, rtTime: str | None) -> str:
-    """Return CSS class based on delay amount."""
+    """Return the CSS delay class for a departure row.
+
+    Args:
+        time: Scheduled departure time in ``HH:MM:SS`` format.
+        rtTime: Real-time departure time in ``HH:MM:SS`` format, or ``None`` if on time.
+
+    Returns:
+        ``"on-time"`` for no delay or 0-minute delay, ``"delayed"`` for delays under
+        5 minutes, or ``"very-delayed"`` for delays of 5 minutes or more.
+    """
     if not isinstance(rtTime, str):
         return "on-time"
 
@@ -61,6 +77,17 @@ def get_delay_class(time: str, rtTime: str | None) -> str:
 
 @app.get("/api/position")
 def get_position(journey_ref: str = Query(...)):
+    """Return the current GPS position of a vehicle journey.
+
+    Args:
+        journey_ref: Opaque journey reference from a departure-board row.
+
+    Returns:
+        JSON ``{"lat": float, "lon": float}``.
+
+    Raises:
+        HTTPException: 404 if the position is unavailable.
+    """
     pos = rjpl.get_journey_position(journey_ref)
     if pos is None:
         raise HTTPException(status_code=404, detail="Position not available")
@@ -71,6 +98,19 @@ def get_position(journey_ref: str = Query(...)):
 @app.get("/")
 @app.get("/{board_id}")
 def return_board(request: Request, board_id: str = "8600675"):
+    """Render the departure board for a station.
+
+    Args:
+        request: FastAPI request object required by Jinja2 template rendering.
+        board_id: 7-digit Rejseplan station ID. Defaults to Lyngby (``"8600675"``).
+
+    Returns:
+        HTML response rendered from ``form.html`` with the departure table,
+        station nav buttons, and live-map template context.
+
+    Raises:
+        HTTPException: 400 if ``board_id`` is not a valid 7-digit numeric ID.
+    """
     validate_board_id(board_id)
     df, error = rjpl.get_departure_board(station_id=board_id, max_journeys=45)
     current_time = datetime.now(tz).strftime("%H:%M")
